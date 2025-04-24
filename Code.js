@@ -1,43 +1,60 @@
 /**
- * Automatic Emails
+ * Automatic Emails for SLP's Feedback Form
  * 
- * @function sendAutomaticEmails
- * Sends a personalized thank-you email to each respondent from the Google Form 
- * linked to this spreadsheet, if a confirmation timestamp has not already been recorded.
+ * Sends a personalized thank-you email when a new Google Form response is submitted.
+ * The email goes to the address in column C, using the first name from column B.
+ * A timestamp is recorded in column L in the format M/d/yy hh:mm a.
  *
- * The email is sent to the address in column C, using the first name from column B.
- * After sending, a timestamp is recorded in column L in the format M/d/yy hh:mm a.
+ * This version is optimized for use with an "on form submit" trigger.
  * 
- * This script is intended to run automatically via a time-driven trigger 
- * scheduled for weekdays at 5:00 PM.
- * 
- * You can customize the email content using the `subject` and `message` variables.
- * 
- * @author Alvaro Gomez
- * Academic Technology Coach, Dept. of Academic Technology  
- * Office: 210-397-9408  
- * Cell: 210-363-1577
+ * @param {GoogleAppsScript.Events.SheetsOnFormSubmit} e - The event object from the form submission.
  */
+function sendAutomaticEmails(e) {
+  const sheet = e.range.getSheet();
+  const row = e.range.getRow();
+  const values = e.values;
 
-function sendAutomaticEmails() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Form Responses 1");
-  const data = sheet.getDataRange().getValues();
-  const timeZone = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
-  
-  for (let i = 1; i < data.length; i++) {
-    const name = data[i][1];  // Column B
-    const email = data[i][2]; // Column C
-    const sent = data[i][11]; // Column L
+  const name = values[1];   // Column B
+  const email = values[2];  // Column C
+  const sent = values[11];  // Column L (might be empty on new submission)
 
-    if (!sent) {
-      const firstName = name.split(" ")[0];
-      const subject = "Thank you for your response";
-      const message = `Dear ${firstName},\n\nThank you for your response.`;
+  if (!sent) {
+    const firstName = name.split(" ")[0];
+    const subject = "Thank you for your response";
+    const message = `Dear ${firstName},\n\nOn behalf of the NISD SLP Leadership Team, we appreciate you taking the time to share your thoughts and give us feedback. Your insights are valuable!\n\nThank you!`;
 
-      MailApp.sendEmail(email, subject, message);
+    MailApp.sendEmail(email, subject, message);
 
-      const timestamp = Utilities.formatDate(new Date(), timeZone, "M/d/yy hh:mm a");
-      sheet.getRange(i + 1, 12).setValue(timestamp); // Column L
-    }
+    const timeZone = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
+    const timestamp = Utilities.formatDate(new Date(), timeZone, "M/d/yy hh:mm a");
+    
+    sheet.getRange(row, 12).setValue(timestamp); // Column L
   }
 }
+
+/**
+ * The function below is for testing.
+ */
+
+// function sendAutomaticEmailsTest() {
+//   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Form Responses 1");
+//   const data = sheet.getDataRange().getValues();
+//   const timeZone = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
+  
+//   for (let i = 1; i < data.length; i++) {
+//     const name = data[i][1];  // Column B
+//     const email = data[i][2]; // Column C
+//     const sent = data[i][11]; // Column L
+
+//     if (!sent) {
+//       const firstName = name.split(" ")[0];
+//       const subject = "Thank you for your response";
+//       const message = `Dear ${firstName},\n\nOn behalf of the NISD SLP Leadership Team, we appreciate you taking the time to share your thoughts and give us feedback. Your insights are valuable!\n\nThank you!`;
+
+//       MailApp.sendEmail(email, subject, message);
+
+//       const timestamp = Utilities.formatDate(new Date(), timeZone, "M/d/yy hh:mm a");
+//       sheet.getRange(i + 1, 12).setValue(timestamp); // Column L
+//     }
+//   }
+// }
